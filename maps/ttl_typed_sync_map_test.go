@@ -144,3 +144,34 @@ func TestTtlTypedSyncMap_Range(t *testing.T) {
 		t.Fatalf("expected Range to stop after 1 iteration, got %d", times)
 	}
 }
+
+func TestTtlTypedSyncMap_TTLResetOnLoad(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	exp := 20 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp)
+	m.sanitizeInterval = 1 * time.Millisecond
+
+	m.Store(10, "ten")
+	// sleep less than exp
+	time.Sleep(10 * time.Millisecond)
+	// Load resets TTL
+	if v, ok := m.Load(10); !ok || v != "ten" {
+		t.Fatalf("expected Load to reset TTL and return (\"ten\",true), got (%v,%v)", v, ok)
+	}
+	// sleep more than exp from original store but less than after reset
+	time.Sleep(15 * time.Millisecond)
+	if v, ok := m.Load(10); !ok || v != "ten" {
+		t.Fatalf("expected value alive after TTL reset, got (%v,%v)", v, ok)
+	}
+}
+
+// Test that sanitize stops on context cancel
+func TestTtlTypedSyncMap_SanitizeStopsOnCancelDirect(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	m := NewTtlTypedSyncMap[int, string](ctx, 10*time.Millisecond)
+	m.sanitizeInterval = 1 * time.Millisecond
+	cancel()
+	// Direct call to sanitize should return immediately without panic or blocking
+	m.sanitize()
+}
