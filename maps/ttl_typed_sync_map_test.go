@@ -102,3 +102,45 @@ func TestTtlTypedSyncMap_Concurrency(t *testing.T) {
 		t.Fatalf("expected len 0 after concurrent store/delete, got %d", m.Len())
 	}
 }
+
+func TestTtlTypedSyncMap_Range(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	exp := 10 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp)
+	m.sanitizeInterval = 1 * time.Millisecond
+
+	// Store two keys; key1 will expire
+	m.Store(1, "one")
+	m.Store(2, "two")
+
+	// expire key 1, remain key 2
+	time.Sleep(time.Millisecond * 5)
+	// load will update ttl for key 2
+	m.Load(2)
+	time.Sleep(time.Millisecond * 5)
+
+	collected := make(map[int]string)
+	m.Range(func(k int, v string) bool {
+		collected[k] = v
+		return true
+	})
+
+	// key1 expired, key2 should remain
+	if _, ok := collected[1]; ok {
+		t.Fatalf("expected expired key 1 to be skipped in Range")
+	}
+	if val, ok := collected[2]; !ok || val != "two" {
+		t.Fatalf("expected key2=\"\"two\"\", got %v (ok=%v)", val, ok)
+	}
+
+	// Test early stop
+	times := 0
+	m.Range(func(k int, v string) bool {
+		times++
+		return false
+	})
+	if times != 1 {
+		t.Fatalf("expected Range to stop after 1 iteration, got %d", times)
+	}
+}
