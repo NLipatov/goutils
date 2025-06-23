@@ -74,3 +74,27 @@ func TestTypedSyncMap_ConcurrentAccess(t *testing.T) {
 		t.Fatalf("expected len 0 after concurrent store/delete, got %d", m.Len())
 	}
 }
+
+func TestNewFromSyncMap(t *testing.T) {
+	sm := &sync.Map{}
+	sm.Store(1, "a")
+	sm.Store(2, "b")
+	m := NewFromSyncMap[int, string](sm)
+	if m.Len() != 2 {
+		t.Fatalf("expected len 2, got %d", m.Len())
+	}
+	if v, ok := m.Load(1); !ok || v != "a" {
+		t.Fatalf("expected Load(1) to return (\"a\", true), got (%v, %v)", v, ok)
+	}
+	if v, ok := m.Load(2); !ok || v != "b" {
+		t.Fatalf("expected Load(2) to return (\"b\", true), got (%v, %v)", v, ok)
+	}
+	m.Store(3, "c")
+	if m.Len() != 3 {
+		t.Fatalf("expected len 3 after adding, got %d", m.Len())
+	}
+	m.Delete(1)
+	if m.Len() != 2 {
+		t.Fatalf("expected len 2 after deleting, got %d", m.Len())
+	}
+}
