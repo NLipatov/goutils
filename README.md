@@ -1,4 +1,7 @@
+![License](https://img.shields.io/badge/Licence-MIT-brightgreen)
 [![Go Reference](https://pkg.go.dev/badge/github.com/NLipatov/goutils.svg)](https://pkg.go.dev/github.com/NLipatov/goutils)
+![Build](https://github.com/NLipatov/goutils/actions/workflows/main.yml/badge.svg)
+![codecov](https://codecov.io/gh/NLipatov/goutils/branch/main/graph/badge.svg)
 
 ---
 # maps
