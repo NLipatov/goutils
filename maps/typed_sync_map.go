@@ -58,6 +58,10 @@ func (t *TypedSyncMap[K, V]) Len() int64 {
 }
 
 func (t *TypedSyncMap[K, V]) Range(f func(key K, value V) bool) {
+	if t.m == nil || f == nil {
+		return
+	}
+
 	t.m.Range(func(k, v any) bool {
 		key := k.(K)
 		val := v.(V)
