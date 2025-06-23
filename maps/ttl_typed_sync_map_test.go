@@ -144,3 +144,61 @@ func TestTtlTypedSyncMap_Range(t *testing.T) {
 		t.Fatalf("expected Range to stop after 1 iteration, got %d", times)
 	}
 }
+
+func TestTtlTypedSyncMap_TTLResetOnLoad(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	exp := 20 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp)
+	m.sanitizeInterval = 1 * time.Millisecond
+
+	m.Store(10, "ten")
+	// sleep less than exp
+	time.Sleep(10 * time.Millisecond)
+	// Load resets TTL
+	if v, ok := m.Load(10); !ok || v != "ten" {
+		t.Fatalf("expected Load to reset TTL and return (\"ten\",true), got (%v,%v)", v, ok)
+	}
+	// sleep more than exp from original store but less than after reset
+	time.Sleep(15 * time.Millisecond)
+	if v, ok := m.Load(10); !ok || v != "ten" {
+		t.Fatalf("expected value alive after TTL reset, got (%v,%v)", v, ok)
+	}
+}
+
+// Test that sanitize stops on context cancel
+func TestTtlTypedSyncMap_SanitizeStopsOnCancelDirect(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	m := NewTtlTypedSyncMap[int, string](ctx, 10*time.Millisecond)
+	m.sanitizeInterval = 1 * time.Millisecond
+	cancel()
+	// Direct call to sanitize should return immediately without panic or blocking
+	m.sanitize()
+}
+
+func TestTtlTypedSyncMap_RangeDeletesMissing(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	exp := 50 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp)
+	m.sanitizeInterval = 10 * time.Millisecond
+
+	// Store and then remove underlying before Range
+	m.Store(42, "value")
+	// Simulate missing underlying entry: delete directly on inner map
+	m.m.Delete(42)
+
+	collected := make(map[int]string)
+	m.Range(func(k int, v string) bool {
+		collected[k] = v
+		return true
+	})
+	// collected must be empty, and exp map entry removed
+	if len(collected) != 0 {
+		t.Fatalf("expected no entries collected, got %v", collected)
+	}
+	// underlying Len should be zero
+	if m.Len() != 0 {
+		t.Fatalf("expected Len()=0 after missing cleanup, got %d", m.Len())
+	}
+}
