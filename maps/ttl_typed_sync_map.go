@@ -67,6 +67,29 @@ func (t *TtlTypedSyncMap[K, V]) Len() int64 {
 	return t.m.Len()
 }
 
+func (t *TtlTypedSyncMap[K, V]) Range(f func(key K, value V) bool) {
+	now := time.Now()
+	t.expMu.Lock()
+	defer t.expMu.Unlock()
+
+	for k, expireAt := range t.exp {
+		if now.After(expireAt) {
+			t.m.Delete(k)
+			delete(t.exp, k)
+			continue
+		}
+		v, ok := t.m.Load(k)
+		if !ok {
+			delete(t.exp, k)
+			continue
+		}
+		t.exp[k] = now.Add(t.expDuration)
+		if !f(k, v) {
+			break
+		}
+	}
+}
+
 func (t *TtlTypedSyncMap[K, V]) sanitize() {
 	ticker := time.NewTicker(t.sanitizeInterval)
 	defer ticker.Stop()
