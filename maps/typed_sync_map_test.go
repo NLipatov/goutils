@@ -98,3 +98,30 @@ func TestNewFromSyncMap(t *testing.T) {
 		t.Fatalf("expected len 2 after deleting, got %d", m.Len())
 	}
 }
+
+func TestTypedSyncMap_Range(t *testing.T) {
+	m := NewTypedSyncMap[int, string]()
+	m.Store(1, "a")
+	m.Store(2, "b")
+
+	collected := make(map[int]string)
+	m.Range(func(k int, v string) bool {
+		collected[k] = v
+		return true
+	})
+	if len(collected) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(collected))
+	}
+	if collected[1] != "a" || collected[2] != "b" {
+		t.Fatalf("expected collected values {1:\"a\",2:\"b\"}, got %v", collected)
+	}
+
+	times := 0
+	m.Range(func(k int, v string) bool {
+		times++
+		return false
+	})
+	if times != 1 {
+		t.Fatalf("expected Range to stop after first iteration, got %d iterations", times)
+	}
+}
