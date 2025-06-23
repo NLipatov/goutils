@@ -17,6 +17,17 @@ func NewTypedSyncMap[K comparable, V any]() *TypedSyncMap[K, V] {
 	}
 }
 
+func NewFromSyncMap[K comparable, V any](m *sync.Map) *TypedSyncMap[K, V] {
+	t := &TypedSyncMap[K, V]{m: m}
+	var cnt int64
+	m.Range(func(_, _ any) bool {
+		cnt++
+		return true
+	})
+	t.count.Store(cnt)
+	return t
+}
+
 func (t *TypedSyncMap[K, V]) Store(key K, value V) {
 	_, loaded := t.m.LoadOrStore(key, value)
 	if loaded {
