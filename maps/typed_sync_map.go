@@ -56,3 +56,11 @@ func (t *TypedSyncMap[K, V]) Delete(key K) {
 func (t *TypedSyncMap[K, V]) Len() int64 {
 	return t.count.Load()
 }
+
+func (t *TypedSyncMap[K, V]) Range(f func(key K, value V) bool) {
+	t.m.Range(func(k, v any) bool {
+		key := k.(K)
+		val := v.(V)
+		return f(key, val)
+	})
+}
