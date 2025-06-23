@@ -125,3 +125,22 @@ func TestTypedSyncMap_Range(t *testing.T) {
 		t.Fatalf("expected Range to stop after first iteration, got %d iterations", times)
 	}
 }
+
+func TestTypedSyncMap_Range_NilFunc(t *testing.T) {
+	m := NewTypedSyncMap[int, string]()
+	m.Store(1, "a")
+	m.Store(2, "b")
+	m.Range(nil)
+	if m.Len() != 2 {
+		t.Fatalf("expected Len()=2 after Range(nil), got %d", m.Len())
+	}
+}
+
+func TestTypedSyncMap_Range_OnNilMap(t *testing.T) {
+	m := NewTypedSyncMap[int, string]()
+	m.m = nil
+	m.Range(func(k int, v string) bool {
+		t.Fatalf("should not iterate on nil map")
+		return true
+	})
+}
