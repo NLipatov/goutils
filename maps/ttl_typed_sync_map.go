@@ -50,7 +50,7 @@ func (t *TtlTypedSyncMap[K, V]) Load(key K) (V, bool) {
 		var zero V
 		return zero, false
 	}
-	// продлеваем TTL на каждый hit
+	// prolongate expiration time on every hit
 	t.exp[key] = time.Now().Add(t.expDuration)
 	return t.m.Load(key)
 }
