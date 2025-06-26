@@ -18,13 +18,20 @@ type TtlTypedSyncMap[K comparable, V any] struct {
 func NewTtlTypedSyncMap[K comparable, V any](
 	ctx context.Context,
 	expDuration time.Duration,
+	sanitizeInterval time.Duration,
 ) *TtlTypedSyncMap[K, V] {
+	if expDuration <= 0 || sanitizeInterval <= 0 {
+		expDuration = time.Second
+		sanitizeInterval = time.Second / 2
+	}
+
 	res := &TtlTypedSyncMap[K, V]{
-		ctx:         ctx,
-		expDuration: expDuration,
-		exp:         make(map[K]time.Time),
-		expMu:       &sync.Mutex{},
-		m:           NewTypedSyncMap[K, V](),
+		ctx:              ctx,
+		expDuration:      expDuration,
+		sanitizeInterval: sanitizeInterval,
+		exp:              make(map[K]time.Time),
+		expMu:            &sync.Mutex{},
+		m:                NewTypedSyncMap[K, V](),
 	}
 	go res.sanitize()
 	return res
@@ -50,7 +57,7 @@ func (t *TtlTypedSyncMap[K, V]) Load(key K) (V, bool) {
 		var zero V
 		return zero, false
 	}
-	// продлеваем TTL на каждый hit
+	// prolongate expiration time on every hit
 	t.exp[key] = time.Now().Add(t.expDuration)
 	return t.m.Load(key)
 }
