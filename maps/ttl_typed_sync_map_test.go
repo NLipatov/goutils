@@ -10,8 +10,9 @@ import (
 func TestTtlTypedSyncMap_StoreLoad(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := NewTtlTypedSyncMap[int, string](ctx, 100*time.Millisecond)
-	m.sanitizeInterval = 10 * time.Millisecond
+	exp := 10 * time.Millisecond
+	sanitizeInterval := time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	m.Store(1, "foo")
 	v, ok := m.Load(1)
@@ -23,8 +24,9 @@ func TestTtlTypedSyncMap_StoreLoad(t *testing.T) {
 func TestTtlTypedSyncMap_ExpireOnLoad(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := NewTtlTypedSyncMap[int, string](ctx, 30*time.Millisecond)
-	m.sanitizeInterval = 10 * time.Millisecond
+	exp := 30 * time.Millisecond
+	sanitizeInterval := 10 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	m.Store(2, "bar")
 	time.Sleep(40 * time.Millisecond)
@@ -37,8 +39,9 @@ func TestTtlTypedSyncMap_ExpireOnLoad(t *testing.T) {
 func TestTtlTypedSyncMap_Delete(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := NewTtlTypedSyncMap[int, string](ctx, time.Second)
-	m.sanitizeInterval = 10 * time.Millisecond
+	exp := time.Second
+	sanitizeInterval := 10 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	m.Store(3, "baz")
 	m.Delete(3)
@@ -51,8 +54,9 @@ func TestTtlTypedSyncMap_Delete(t *testing.T) {
 func TestTtlTypedSyncMap_Len(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := NewTtlTypedSyncMap[int, string](ctx, time.Second)
-	m.sanitizeInterval = 10 * time.Millisecond
+	exp := time.Second
+	sanitizeInterval := 10 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	if m.Len() != 0 {
 		t.Fatalf("expected 0")
@@ -70,8 +74,9 @@ func TestTtlTypedSyncMap_Len(t *testing.T) {
 func TestTtlTypedSyncMap_SanitizeJanitor(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := NewTtlTypedSyncMap[int, string](ctx, 20*time.Millisecond)
-	m.sanitizeInterval = 5 * time.Millisecond
+	exp := 20 * time.Millisecond
+	sanitizeInterval := 5 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	m.Store(5, "e")
 	time.Sleep(30 * time.Millisecond)
@@ -84,8 +89,9 @@ func TestTtlTypedSyncMap_SanitizeJanitor(t *testing.T) {
 func TestTtlTypedSyncMap_Concurrency(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := NewTtlTypedSyncMap[int, string](ctx, 100*time.Millisecond)
-	m.sanitizeInterval = 10 * time.Millisecond
+	exp := 10 * time.Millisecond
+	sanitizeInterval := 1 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < 50; i++ {
@@ -107,8 +113,8 @@ func TestTtlTypedSyncMap_Range(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	exp := 10 * time.Millisecond
-	m := NewTtlTypedSyncMap[int, string](ctx, exp)
-	m.sanitizeInterval = 1 * time.Millisecond
+	sanitizeInterval := 1 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	// Store two keys; key1 will expire
 	m.Store(1, "one")
@@ -149,8 +155,8 @@ func TestTtlTypedSyncMap_TTLResetOnLoad(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	exp := 20 * time.Millisecond
-	m := NewTtlTypedSyncMap[int, string](ctx, exp)
-	m.sanitizeInterval = 1 * time.Millisecond
+	sanitizeInterval := time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	m.Store(10, "ten")
 	// sleep less than exp
@@ -169,8 +175,9 @@ func TestTtlTypedSyncMap_TTLResetOnLoad(t *testing.T) {
 // Test that sanitize stops on context cancel
 func TestTtlTypedSyncMap_SanitizeStopsOnCancelDirect(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	m := NewTtlTypedSyncMap[int, string](ctx, 10*time.Millisecond)
-	m.sanitizeInterval = 1 * time.Millisecond
+	exp := 10 * time.Millisecond
+	sanitizeInterval := 1 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 	cancel()
 	// Direct call to sanitize should return immediately without panic or blocking
 	m.sanitize()
@@ -180,8 +187,8 @@ func TestTtlTypedSyncMap_RangeDeletesMissing(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	exp := 50 * time.Millisecond
-	m := NewTtlTypedSyncMap[int, string](ctx, exp)
-	m.sanitizeInterval = 10 * time.Millisecond
+	sanitizeInterval := 10 * time.Millisecond
+	m := NewTtlTypedSyncMap[int, string](ctx, exp, sanitizeInterval)
 
 	// Store and then remove underlying before Range
 	m.Store(42, "value")
@@ -200,5 +207,88 @@ func TestTtlTypedSyncMap_RangeDeletesMissing(t *testing.T) {
 	// underlying Len should be zero
 	if m.Len() != 0 {
 		t.Fatalf("expected Len()=0 after missing cleanup, got %d", m.Len())
+	}
+}
+
+func TestNewTtlTypedSyncMap_Defaults(t *testing.T) {
+	// Passing non-positive durations should fall back to defaults
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// expDuration and sanitizeInterval are <= 0
+	m := NewTtlTypedSyncMap[string, int](ctx, 0, -10*time.Second)
+
+	// Immediately after Store the entry should be available
+	m.Store("foo", 42)
+	if v, ok := m.Load("foo"); !ok || v != 42 {
+		t.Fatalf("expected to load immediately, got ok=%v, v=%d", ok, v)
+	}
+
+	// After ~1 second (default expDuration) the entry should expire
+	time.Sleep(1100 * time.Millisecond)
+	if _, ok := m.Load("foo"); ok {
+		t.Fatal("expected entry to be expired after default 1s TTL")
+	}
+}
+
+func TestNewTtlTypedSyncMap_CustomIntervals(t *testing.T) {
+	// Passing custom intervals should use them
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	exp := 200 * time.Millisecond
+	sanitizeInterval := 50 * time.Millisecond
+	m := NewTtlTypedSyncMap[string, int](ctx, exp, sanitizeInterval)
+
+	// Store an entry
+	m.Store("bar", 100)
+	if v, ok := m.Load("bar"); !ok || v != 100 {
+		t.Fatalf("expected to load immediately, got ok=%v, v=%d", ok, v)
+	}
+
+	// Wait just beyond expDuration but before sanitizeInterval triggers
+	time.Sleep(exp + 20*time.Millisecond)
+	// Although the sanitize goroutine may not have run yet,
+	// Load itself should remove the expired key.
+	if _, ok := m.Load("bar"); ok {
+		t.Fatal("expected entry to be expired after custom TTL")
+	}
+}
+
+func TestRangeProlongatesTTL(t *testing.T) {
+	// Verify that Range prolongs the TTL on each access
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	exp := 10 * time.Millisecond
+	sanitizeInterval := 5 * time.Millisecond
+	m := NewTtlTypedSyncMap[string, int](ctx, exp, sanitizeInterval)
+
+	m.Store("baz", 7)
+	// Call Range a few times before the original expDuration elapses
+	for i := 0; i < 3; i++ {
+		time.Sleep(exp / 2)
+		called := false
+		m.Range(func(k string, v int) bool {
+			called = true
+			if k != "baz" || v != 7 {
+				t.Fatalf("unexpected key/value %s/%d", k, v)
+			}
+			return true
+		})
+		if !called {
+			t.Fatal("expected Range to see the entry before expiration")
+		}
+	}
+
+	// Now without further Range calls, wait for TTL to elapse
+	time.Sleep(exp + 10*time.Millisecond)
+	var seen bool
+	m.Range(func(k string, v int) bool {
+		seen = true
+		return true
+	})
+	if seen {
+		t.Fatal("expected no entries after TTL expired")
 	}
 }
