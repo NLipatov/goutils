@@ -68,10 +68,88 @@ val, ok = ttlMap.Load(1)  // "", false (expired)
 
 ---
 
-## Usage
+# queues
 
-* Use `TypedSyncMap` for a fast, thread-safe, type-safe map with O(1) length.
-* Use `TtlTypedSyncMap` when you need automatic expiration of keys (e.g., session storage, cache).
+Generic FIFO queues and LIFO stacks for Go.
+
+## Types
+
+### `Queue[T any]`
+
+FIFO (first-in, first-out) queue implemented on top of a slice.
+
+#### Features
+
+* O(1) amortized enqueue/dequeue.
+* Safe for single-goroutine use.
+* Automatically grows underlying slice.
+* Exposes `Size()` method.
+
+#### Example
+
+```go
+import "github.com/NLipatov/goutils/queues"
+
+q, _ := queues.NewQueue // initial capacity 10
+q.Enqueue(1)
+q.Enqueue(2)
+val, ok := q.Dequeue() // val == 1, ok == true
+peek, ok := q.Peek()   // peek == 2, ok == true
+length := q.Size()     // length == 1
+```
+
+---
+
+### `RingQueue[T any]`
+
+FIFO queue implemented as a ring buffer.
+
+#### Features
+
+* True O(1) enqueue/dequeue without slice-shifting.
+* No stale elements; helps GC.
+* Automatically doubles capacity when full.
+* Exposes `Size()` and `Capacity()`.
+
+#### Example
+
+```go
+import "github.com/NLipatov/goutils/queues"
+
+rq, _ := queues.NewRingQueue
+rq.Enqueue("a")
+rq.Enqueue("b")
+first, _ := rq.Dequeue()   // "a"
+currentCap := rq.Capacity() // 4 (or 8 after growth)
+```
+
+---
+
+### `Stack[T any]`
+
+LIFO (last-in, first-out) stack implemented on top of a slice.
+
+#### Features
+
+* O(1) amortized push/pop.
+* Safe for single-goroutine use.
+* Automatically grows underlying slice.
+* Exposes `Size()`, `Push()`, `Pop()`, and `Peek()`.
+
+#### Example
+
+```go
+import "github.com/NLipatov/goutils/queues"
+
+s, _ := queues.NewStack // initial capacity 5
+s.Push("first")
+s.Push("second")
+top, ok := s.Peek() // top == "second", ok == true
+val, ok := s.Pop()  // val == "second", ok == true
+length := s.Size()  // length == 1
+```
+
+---
 
 ## License
 
