@@ -7,6 +7,9 @@ type Stack[T any] struct {
 
 // NewStack creates a new empty Stack with the given capacity.
 func NewStack[T any](capacity int) *Stack[T] {
+	if capacity <= 0 {
+		panic("capacity must be > 0")
+	}
 	return &Stack[T]{
 		arr: make([]T, 0, capacity),
 	}

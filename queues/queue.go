@@ -8,6 +8,9 @@ type Queue[T any] struct {
 
 // NewQueue returns a new empty Queue with the specified initial capacity.
 func NewQueue[T any](capacity int) *Queue[T] {
+	if capacity <= 0 {
+		panic("capacity must be > 0")
+	}
 	return &Queue[T]{
 		arr: make([]T, 0, capacity),
 	}
