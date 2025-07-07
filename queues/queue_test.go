@@ -6,7 +6,7 @@ import (
 )
 
 // Test that NewQueue panics on invalid capacity (≤ 0).
-func TestNewQueue_PanicOnInvalidCapacity(t *testing.T) {
+func TestNewQueue_ErrorOnInvalidCapacity(t *testing.T) {
 	_, err := NewQueue[int](-1)
 	if !errors.Is(err, ErrInvalidCapacity) {
 		t.Fatalf("expected 'ErrInvalidCapacity' error, got '%v'", err)
