@@ -161,7 +161,7 @@ func TestMustDequeue_ReturnAndPanic(t *testing.T) {
 
 	// empty MustDequeue panics ErrEmpty
 	defer func() {
-		if r := recover(); r != ErrEmpty {
+		if r := recover(); r != ErrEmptyRingQueue {
 			t.Errorf("panic = %v, want ErrEmpty", r)
 		}
 	}()
