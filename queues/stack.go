@@ -20,14 +20,13 @@ func (stack *Stack[T]) Push(value T) {
 // Pop removes and returns the value from the top of the stack.
 // The boolean result is false if the stack is empty.
 func (stack *Stack[T]) Pop() (T, bool) {
+	var zero T
 	if len(stack.arr) == 0 {
-		var zero T
 		return zero, false
 	}
 
 	headIdx := stack.headIndex()
 	head := stack.arr[headIdx]
-	var zero T
 	stack.arr[headIdx] = zero
 	stack.arr = stack.arr[:headIdx]
 	return head, true
