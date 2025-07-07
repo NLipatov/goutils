@@ -1,8 +1,16 @@
 package queues
 
 import (
+	"errors"
 	"testing"
 )
+
+func TestNewStack_ErrorOnInvalidCapacity(t *testing.T) {
+	_, err := NewStack[int](-1)
+	if !errors.Is(err, ErrInvalidCapacity) {
+		t.Fatalf("expected 'ErrInvalidCapacity' error, got '%v'", err)
+	}
+}
 
 func TestStack_PushPopPeek_Size(t *testing.T) {
 	stack, stackErr := NewStack[int](1)
