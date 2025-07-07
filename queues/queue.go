@@ -7,13 +7,13 @@ type Queue[T any] struct {
 }
 
 // NewQueue returns a new empty Queue with the specified initial capacity.
-func NewQueue[T any](capacity int) *Queue[T] {
+func NewQueue[T any](capacity int) (*Queue[T], error) {
 	if capacity <= 0 {
-		panic("capacity must be > 0")
+		return nil, ErrInvalidCapacity
 	}
 	return &Queue[T]{
 		arr: make([]T, 0, capacity),
-	}
+	}, nil
 }
 
 // Enqueue adds value to the end of the queue.

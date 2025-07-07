@@ -6,13 +6,13 @@ type Stack[T any] struct {
 }
 
 // NewStack creates a new empty Stack with the given capacity.
-func NewStack[T any](capacity int) *Stack[T] {
+func NewStack[T any](capacity int) (*Stack[T], error) {
 	if capacity <= 0 {
-		panic("capacity must be > 0")
+		return nil, ErrInvalidCapacity
 	}
 	return &Stack[T]{
 		arr: make([]T, 0, capacity),
-	}
+	}, nil
 }
 
 // Push adds a value to the top of the stack.

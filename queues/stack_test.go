@@ -5,7 +5,10 @@ import (
 )
 
 func TestStack_PushPopPeek_Size(t *testing.T) {
-	stack := NewStack[int](0)
+	stack, stackErr := NewStack[int](1)
+	if stackErr != nil {
+		t.Fatal(stackErr)
+	}
 
 	if _, ok := stack.Pop(); ok {
 		t.Fatal("Pop on empty stack should return false")
@@ -51,7 +54,10 @@ func TestStack_PushPopPeek_Size(t *testing.T) {
 }
 
 func TestStack_WithStrings(t *testing.T) {
-	stack := NewStack[string](0)
+	stack, stackErr := NewStack[string](1)
+	if stackErr != nil {
+		t.Fatal(stackErr)
+	}
 	stack.Push("a")
 	stack.Push("b")
 	if v, ok := stack.Pop(); !ok || v != "b" {
