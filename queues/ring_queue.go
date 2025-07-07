@@ -1,7 +1,5 @@
 package queues
 
-import "errors"
-
 // RingQueue is a generic FIFO queue implemented as a ring buffer.
 //
 // Compared to a slice-based queue, RingQueue avoids memory leaks and unnecessary data copying:
@@ -87,15 +85,12 @@ func (q *RingQueue[T]) grow() {
 	q.capacity = newCap
 }
 
-// ErrEmpty is returned by MustDequeue if the queue is empty.
-var ErrEmpty = errors.New("ring queue is empty")
-
 // MustDequeue removes and returns the first element or panics if the queue is empty.
 // Use for internal invariants or testing.
 func (q *RingQueue[T]) MustDequeue() T {
 	val, ok := q.Dequeue()
 	if !ok {
-		panic(ErrEmpty)
+		panic(ErrEmptyRingQueue)
 	}
 	return val
 }
