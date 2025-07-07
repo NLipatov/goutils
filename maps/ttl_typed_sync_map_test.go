@@ -292,3 +292,52 @@ func TestRangeProlongatesTTL(t *testing.T) {
 		t.Fatal("expected no entries after TTL expired")
 	}
 }
+
+func TestTtlTypedSyncMap_Range_RemovesExpiredEntries(t *testing.T) {
+	// expDuration is very short, sanitizeInterval is long so sanitize()
+	// won't remove entries before we call Range.
+	ttl := NewTtlTypedSyncMap[string, int](
+		context.Background(),
+		10*time.Millisecond,
+		1*time.Second,
+	)
+	ttl.Store("expiredKey", 100)
+
+	// wait until after expiration
+	time.Sleep(20 * time.Millisecond)
+
+	// Range should see the entry as expired, delete it, and continue
+	called := false
+	ttl.Range(func(k string, v int) bool {
+		called = true
+		return true
+	})
+
+	if called {
+		t.Errorf("expected Range not to call function on expired entries")
+	}
+	if got := ttl.Len(); got != 0 {
+		t.Errorf("expected Len() == 0 after Range removed expired entry, got %d", got)
+	}
+}
+
+func TestTtlTypedSyncMap_Sanitize_RemovesExpiredEntries(t *testing.T) {
+	// expDuration and sanitizeInterval both short
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ttl := NewTtlTypedSyncMap[string, int](
+		ctx,
+		10*time.Millisecond,
+		10*time.Millisecond,
+	)
+	ttl.Store("expiredKey", 200)
+
+	// wait enough time for the key to expire and for at least one sanitize tick
+	time.Sleep(35 * time.Millisecond)
+
+	// sanitize goroutine should have deleted the expired key
+	if got := ttl.Len(); got != 0 {
+		t.Errorf("expected Len() == 0 after sanitize removed expired entry, got %d", got)
+	}
+}
