@@ -5,32 +5,37 @@ import (
 	"time"
 )
 
+// LockFreeFixedWindow implements a lock-free fixed window rate limiter.
+// Allows a small overshoot under concurrent load due to lock-free design.
 type LockFreeFixedWindow struct {
-	duration time.Duration
-	start    atomic.Int64
-	rate     atomic.Int64
-	maxRate  int64
+	window      time.Duration // Duration of each rate limit window
+	windowStart atomic.Int64  // Start time of the current window (UnixNano)
+	counter     atomic.Int64  // Requests counted in the current window
+	limit       int64         // Maximum requests allowed per window
 }
 
+// NewLockFreeFixedWindow creates a new lock-free fixed window rate limiter.
 func NewLockFreeFixedWindow(
-	periodDuration time.Duration,
-	maxRate int64,
+	window time.Duration,
+	limit int64,
 ) *LockFreeFixedWindow {
 	rl := &LockFreeFixedWindow{
-		duration: periodDuration,
-		maxRate:  maxRate,
+		window: window,
+		limit:  limit,
 	}
-	rl.start.Store(time.Now().UnixNano())
+	rl.windowStart.Store(time.Now().UnixNano())
 	return rl
 }
 
+// Allow returns true if the request is allowed in the current window, false otherwise.
+// May allow a small number of requests above the limit under concurrent load.
 func (l *LockFreeFixedWindow) Allow() bool {
-	if time.Since(time.Unix(0, l.start.Load())) >= l.duration {
-		l.rate.Store(0)
-		l.start.Store(time.Now().UnixNano())
+	if time.Since(time.Unix(0, l.windowStart.Load())) >= l.window {
+		l.counter.Store(0)
+		l.windowStart.Store(time.Now().UnixNano())
 	}
 
-	if l.rate.Add(1) > l.maxRate {
+	if l.counter.Add(1) > l.limit {
 		return false
 	}
 
