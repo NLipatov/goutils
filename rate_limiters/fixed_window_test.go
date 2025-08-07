@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func TestLockFreeFixedWindow_Allow_WithinLimit(t *testing.T) {
-	limiter := NewLockFreeFixedWindow(100*time.Millisecond, 3)
+func TestFixedWindow_Allow_WithinLimit(t *testing.T) {
+	limiter := NewFixedWindow(100*time.Millisecond, 3)
 
 	for i := 0; i < 3; i++ {
 		if !limiter.Allow() {
@@ -17,8 +17,8 @@ func TestLockFreeFixedWindow_Allow_WithinLimit(t *testing.T) {
 	}
 }
 
-func TestLockFreeFixedWindow_Allow_OverLimit(t *testing.T) {
-	limiter := NewLockFreeFixedWindow(100*time.Millisecond, 2)
+func TestFixedWindow_Allow_OverLimit(t *testing.T) {
+	limiter := NewFixedWindow(100*time.Millisecond, 2)
 
 	_ = limiter.Allow()
 	_ = limiter.Allow()
@@ -27,8 +27,8 @@ func TestLockFreeFixedWindow_Allow_OverLimit(t *testing.T) {
 	}
 }
 
-func TestLockFreeFixedWindow_Allow_WindowReset(t *testing.T) {
-	limiter := NewLockFreeFixedWindow(30*time.Millisecond, 1)
+func TestFixedWindow_Allow_WindowReset(t *testing.T) {
+	limiter := NewFixedWindow(30*time.Millisecond, 1)
 
 	if !limiter.Allow() {
 		t.Fatal("expected Allow() to return true for first request")
@@ -44,8 +44,8 @@ func TestLockFreeFixedWindow_Allow_WindowReset(t *testing.T) {
 	}
 }
 
-func TestLockFreeFixedWindow_Allow_RaceCondition(t *testing.T) {
-	limiter := NewLockFreeFixedWindow(100*time.Millisecond, 1000)
+func TestFixedWindow_Allow_StrictNoOvershoot(t *testing.T) {
+	limiter := NewFixedWindow(100*time.Millisecond, 1000)
 
 	var allowed, denied int64
 	var wg sync.WaitGroup
@@ -63,17 +63,16 @@ func TestLockFreeFixedWindow_Allow_RaceCondition(t *testing.T) {
 	}
 	wg.Wait()
 
-	// Accept small overshoot due to race condition
-	if allowed < 1000 || allowed > 1050 {
-		t.Errorf("allowed = %d, want ~1000 (+overshoot due to races)", allowed)
+	if allowed != 1000 {
+		t.Errorf("allowed = %d, want exactly 1000 (no overshoot expected)", allowed)
 	}
-	if denied < 950 || denied > 1000 {
-		t.Errorf("denied = %d, want ~1000", denied)
+	if denied != 1000 {
+		t.Errorf("denied = %d, want exactly 1000", denied)
 	}
 }
 
-func TestLockFreeFixedWindow_WindowStartsNow(t *testing.T) {
-	limiter := NewLockFreeFixedWindow(100*time.Millisecond, 1)
+func TestFixedWindow_WindowStartsNow(t *testing.T) {
+	limiter := NewFixedWindow(100*time.Millisecond, 1)
 	time.Sleep(10 * time.Millisecond)
 	if !limiter.Allow() {
 		t.Fatal("expected Allow() to return true on first request")
