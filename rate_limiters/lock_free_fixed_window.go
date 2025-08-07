@@ -24,13 +24,13 @@ func NewLockFreeFixedWindow(
 	return rl
 }
 
-func (f *LockFreeFixedWindow) Allow() bool {
-	if time.Since(time.Unix(0, f.start.Load())) >= f.duration {
-		f.rate.Store(0)
-		f.start.Store(time.Now().UnixNano())
+func (l *LockFreeFixedWindow) Allow() bool {
+	if time.Since(time.Unix(0, l.start.Load())) >= l.duration {
+		l.rate.Store(0)
+		l.start.Store(time.Now().UnixNano())
 	}
 
-	if f.rate.Add(1) > f.maxRate {
+	if l.rate.Add(1) > l.maxRate {
 		return false
 	}
 
