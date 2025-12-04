@@ -193,7 +193,7 @@ func TestTtlTypedSyncMap_RangeDeletesMissing(t *testing.T) {
 	// Store and then remove underlying before Range
 	m.Store(42, "value")
 	// Simulate missing underlying entry: delete directly on inner map
-	m.m.Delete(42)
+	m.Delete(42)
 
 	collected := make(map[int]string)
 	m.Range(func(k int, v string) bool {
