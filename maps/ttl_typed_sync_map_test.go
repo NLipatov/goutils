@@ -341,3 +341,17 @@ func TestTtlTypedSyncMap_Sanitize_RemovesExpiredEntries(t *testing.T) {
 		t.Errorf("expected Len() == 0 after sanitize removed expired entry, got %d", got)
 	}
 }
+
+func TestNewTtlTypedSyncMap_TinyExpDuration(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ttl := NewTtlTypedSyncMap[string, int](ctx, time.Nanosecond, 0)
+	if got := ttl.sanitizeInterval; got != time.Second/2 {
+		t.Fatalf("expected sanitizeInterval=500ms, got %v", got)
+	}
+	ttl.Store("foo", 42)
+	time.Sleep(1 * time.Millisecond)
+	if v, ok := ttl.Load("foo"); ok {
+		t.Fatalf("expected entry to be expired with 1ns TTL, got (%v, %v)", v, ok)
+	}
+}
