@@ -193,7 +193,7 @@ func TestTtlTypedSyncMap_RangeDeletesMissing(t *testing.T) {
 	// Store and then remove underlying before Range
 	m.Store(42, "value")
 	// Simulate missing underlying entry: delete directly on inner map
-	m.m.Delete(42)
+	m.Delete(42)
 
 	collected := make(map[int]string)
 	m.Range(func(k int, v string) bool {
@@ -339,5 +339,19 @@ func TestTtlTypedSyncMap_Sanitize_RemovesExpiredEntries(t *testing.T) {
 	// sanitize goroutine should have deleted the expired key
 	if got := ttl.Len(); got != 0 {
 		t.Errorf("expected Len() == 0 after sanitize removed expired entry, got %d", got)
+	}
+}
+
+func TestNewTtlTypedSyncMap_TinyExpDuration(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ttl := NewTtlTypedSyncMap[string, int](ctx, time.Nanosecond, 0)
+	if got := ttl.sanitizeInterval; got != time.Second/2 {
+		t.Fatalf("expected sanitizeInterval=500ms, got %v", got)
+	}
+	ttl.Store("foo", 42)
+	time.Sleep(1 * time.Millisecond)
+	if v, ok := ttl.Load("foo"); ok {
+		t.Fatalf("expected entry to be expired with 1ns TTL, got (%v, %v)", v, ok)
 	}
 }
