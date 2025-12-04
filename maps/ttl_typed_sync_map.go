@@ -47,8 +47,8 @@ func NewTtlTypedSyncMap[K comparable, V any](
 }
 
 func (t *TtlTypedSyncMap[K, V]) Store(key K, value V) {
-	now := time.Now()
 	t.mu.Lock()
+	now := time.Now()
 	t.items[key] = ttlEntry[V]{
 		value:     value,
 		expiresAt: now.Add(t.expDuration),
@@ -58,7 +58,6 @@ func (t *TtlTypedSyncMap[K, V]) Store(key K, value V) {
 
 func (t *TtlTypedSyncMap[K, V]) Load(key K) (V, bool) {
 	var zero V
-	now := time.Now()
 
 	t.mu.Lock()
 	entry, ok := t.items[key]
@@ -67,6 +66,7 @@ func (t *TtlTypedSyncMap[K, V]) Load(key K) (V, bool) {
 		return zero, false
 	}
 
+	now := time.Now()
 	if now.After(entry.expiresAt) {
 		delete(t.items, key)
 		t.mu.Unlock()
@@ -96,8 +96,8 @@ func (t *TtlTypedSyncMap[K, V]) Len() int64 {
 }
 
 func (t *TtlTypedSyncMap[K, V]) Range(f func(key K, value V) bool) {
-	now := time.Now()
 	t.mu.Lock()
+	now := time.Now()
 	defer t.mu.Unlock()
 
 	for k, entry := range t.items {
@@ -105,6 +105,8 @@ func (t *TtlTypedSyncMap[K, V]) Range(f func(key K, value V) bool) {
 			delete(t.items, k)
 			continue
 		}
+
+		// sliding TTL
 		entry.expiresAt = now.Add(t.expDuration)
 		t.items[k] = entry
 
@@ -117,13 +119,14 @@ func (t *TtlTypedSyncMap[K, V]) Range(f func(key K, value V) bool) {
 func (t *TtlTypedSyncMap[K, V]) sanitize() {
 	ticker := time.NewTicker(t.sanitizeInterval)
 	defer ticker.Stop()
+
 	for {
 		select {
 		case <-t.ctx.Done():
 			return
 		case <-ticker.C:
-			now := time.Now()
 			t.mu.Lock()
+			now := time.Now()
 			for k, entry := range t.items {
 				if now.After(entry.expiresAt) {
 					delete(t.items, k)
